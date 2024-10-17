@@ -7,7 +7,6 @@ needed to result in exactly n H characters in the file.
 def minOperations(n):
     """
     Calculate the fewest number of operations needed to result in exactly n H characters.
-    
     :param n: Target number of H characters
     :type n: int
     :return: Minimum number of operations or 0 if n is impossible to achieve
