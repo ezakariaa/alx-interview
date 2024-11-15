@@ -1,42 +1,50 @@
 #!/usr/bin/node
-const request = require('request');
+/**
+ * Prints all characters of a Star Wars movie
+ * The first positional argument passed is the Movie ID
+ * Display one character name per line in the same order
+ * as  list in the /films/ endpoint
+ */
 
-const movieId = process.argv[2];
-if (!movieId) {
-  console.error("Please provide a Movie ID.");
-  process.exit(1);
+
+const util = require('util');
+const request = util.promisify(require('request'));
+
+const argv = process.argv;
+const urlFilm = 'https://swapi-api.hbtn.io/api/films/';
+const urlMovie = `${urlFilm}${argv[2]}/`;
+
+async function fetchData(url) {
+  try {
+    const response = await request(url);
+    return JSON.parse(response.body);
+  } catch (error) {
+    throw error;
+  }
 }
 
-// URL for the specific film using the movie ID
-const url = `https://swapi.dev/api/films/${movieId}/`;
-
-request(url, (error, response, body) => {
-  if (error) {
-    console.error("Error:", error);
-    return;
+async function CharRequest(idx, characters, limit) {
+  try {
+    if (idx < limit) {
+      const character = await fetchData(characters[idx]);
+      console.log(character.name);
+      await CharRequest(idx + 1, characters, limit);
+    }
+  } catch (error) {
+    console.error('error:', error);
   }
+}
 
-  if (response.statusCode !== 200) {
-    console.error(`Failed to retrieve movie with ID ${movieId}.`);
-    return;
+(async () => {
+  try {
+    const movieData = await fetchData(urlMovie);
+    const characters = movieData.characters;
+
+    if (characters && characters.length > 0) {
+      const limit = characters.length;
+      await CharRequest(0, characters, limit);
+    }
+  } catch (error) {
+    console.log(error);
   }
-
-  const film = JSON.parse(body);
-  const characters = film.characters;
-
-  characters.forEach(characterUrl => {
-    request(characterUrl, (err, res, charBody) => {
-      if (err) {
-        console.error("Error:", err);
-        return;
-      }
-
-      if (res.statusCode === 200) {
-        const character = JSON.parse(charBody);
-        console.log(character.name);
-      } else {
-        console.error("Failed to retrieve character.");
-      }
-    });
-  });
-});
+})();
