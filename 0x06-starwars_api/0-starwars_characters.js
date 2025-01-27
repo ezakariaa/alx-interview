@@ -1,12 +1,10 @@
 #!/usr/bin/node
 
 const request = require('request');
-
 const movieId = process.argv[2];
 const filmEndPoint = 'https://swapi-api.hbtn.io/api/films/' + movieId;
 let people = [];
 const names = [];
-
 const requestCharacters = async () => {
   await new Promise(resolve => request(filmEndPoint, (err, res, body) => {
     if (err || res.statusCode !== 200) {
@@ -18,7 +16,6 @@ const requestCharacters = async () => {
     }
   }));
 };
-
 const requestNames = async () => {
   if (people.length > 0) {
     for (const p of people) {
@@ -36,7 +33,6 @@ const requestNames = async () => {
     console.error('Error: Got no Characters for some reason');
   }
 };
-
 const getCharNames = async () => {
   await requestCharacters();
   await requestNames();
@@ -49,7 +45,4 @@ const getCharNames = async () => {
     }
   }
 };
-
 getCharNames();
-
-
