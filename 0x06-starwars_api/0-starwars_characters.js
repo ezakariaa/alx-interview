@@ -1,50 +1,55 @@
 #!/usr/bin/node
-/**
- * Prints all characters of a Star Wars movie
- * The first positional argument passed is the Movie ID
- * Display one character name per line in the same order
- * as  list in the /films/ endpoint
- */
 
+const request = require('request');
 
-const util = require('util');
-const request = util.promisify(require('request'));
+const movieId = process.argv[2];
+const filmEndPoint = 'https://swapi-api.hbtn.io/api/films/' + movieId;
+let people = [];
+const names = [];
 
-const argv = process.argv;
-const urlFilm = 'https://swapi-api.hbtn.io/api/films/';
-const urlMovie = `${urlFilm}${argv[2]}/`;
-
-async function fetchData(url) {
-  try {
-    const response = await request(url);
-    return JSON.parse(response.body);
-  } catch (error) {
-    throw error;
-  }
-}
-
-async function CharRequest(idx, characters, limit) {
-  try {
-    if (idx < limit) {
-      const character = await fetchData(characters[idx]);
-      console.log(character.name);
-      await CharRequest(idx + 1, characters, limit);
+const requestCharacters = async () => {
+  await new Promise(resolve => request(filmEndPoint, (err, res, body) => {
+    if (err || res.statusCode !== 200) {
+      console.error('Error: ', err, '| StatusCode: ', res.statusCode);
+    } else {
+      const jsonBody = JSON.parse(body);
+      people = jsonBody.characters;
+      resolve();
     }
-  } catch (error) {
-    console.error('error:', error);
-  }
-}
+  }));
+};
 
-(async () => {
-  try {
-    const movieData = await fetchData(urlMovie);
-    const characters = movieData.characters;
-
-    if (characters && characters.length > 0) {
-      const limit = characters.length;
-      await CharRequest(0, characters, limit);
+const requestNames = async () => {
+  if (people.length > 0) {
+    for (const p of people) {
+      await new Promise(resolve => request(p, (err, res, body) => {
+        if (err || res.statusCode !== 200) {
+          console.error('Error: ', err, '| StatusCode: ', res.statusCode);
+        } else {
+          const jsonBody = JSON.parse(body);
+          names.push(jsonBody.name);
+          resolve();
+        }
+      }));
     }
-  } catch (error) {
-    console.log(error);
+  } else {
+    console.error('Error: Got no Characters for some reason');
   }
-})();
+};
+
+const getCharNames = async () => {
+  await requestCharacters();
+  await requestNames();
+
+  for (const n of names) {
+    if (n === names[names.length - 1]) {
+      process.stdout.write(n);
+    } else {
+      process.stdout.write(n + '\n');
+    }
+  }
+};
+
+getCharNames();
+
+
